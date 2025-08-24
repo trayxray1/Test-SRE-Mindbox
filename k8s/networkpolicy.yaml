@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mindbox-app-network-policy
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Network Policy для контроля сетевого трафика"
+spec:
+  # Селектор для подов
+  podSelector:
+    matchLabels:
+      app: mindbox-app
+  
+  # Политика для входящего трафика
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # Входящий трафик
+  ingress:
+  # Разрешить HTTP трафик на порт 5000
+  - ports:
+    - protocol: TCP
+      port: 5000
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: mindbox-sre-test
+    - podSelector:
+        matchLabels:
+          app: mindbox-app
+  
+  # Разрешить трафик от kube-system (для мониторинга)
+  - ports:
+    - protocol: TCP
+      port: 5000
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+  
+  # Разрешить трафик от ingress-nginx
+  - ports:
+    - protocol: TCP
+      port: 5000
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+  
+  # Исходящий трафик
+  egress:
+  # Разрешить DNS запросы
+  - ports:
+    - protocol: UDP
+      port: 53
+    to:
+    - namespaceSelector: {}
+  
+  # Разрешить HTTP/HTTPS для внешних API
+  - ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    to: []
+  
+  # Разрешить трафик в тот же namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: mindbox-sre-test
+  
+  # Разрешить трафик в kube-system (для API сервера)
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system 

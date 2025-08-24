@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mindbox-app-ingress
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Ingress для внешнего доступа к Mindbox SRE тестовому приложению"
+    # Аннотации для NGINX Ingress Controller
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    
+    # Аннотации для безопасности
+    nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0"  # В продакшене ограничить
+    
+    # Аннотации для производительности
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    
+    # Аннотации для мониторинга
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+spec:
+  # Класс Ingress контроллера
+  ingressClassName: nginx
+  
+  # Правила маршрутизации
+  rules:
+  - host: mindbox-sre-test.local  # В реальности заменить на реальный домен
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mindbox-app-service
+            port:
+              number: 80
+  
+  # TLS конфигурация (опционально)
+  # tls:
+  # - hosts:
+  #   - mindbox-sre-test.local
+  #   secretName: mindbox-app-tls 

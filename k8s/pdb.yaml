@@ -1,0 +1,22 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mindbox-app-pdb
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Pod Disruption Budget для защиты Mindbox SRE тестового приложения"
+spec:
+  # Селектор для подов
+  selector:
+    matchLabels:
+      app: mindbox-app
+  
+  # Минимальное количество доступных подов
+  minAvailable: 2  # Всегда должно быть доступно минимум 2 пода
+  
+  # Альтернативно можно использовать maxUnavailable
+  # maxUnavailable: 1  # Максимум 1 под может быть недоступен
+  
+  # Примечание: minAvailable и maxUnavailable не могут быть указаны одновременно 

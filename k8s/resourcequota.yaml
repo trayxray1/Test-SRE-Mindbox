@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: mindbox-app-quota
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Resource Quota для контроля ресурсов Mindbox SRE тестового приложения"
+spec:
+  # Квоты на вычислительные ресурсы
+  hard:
+    # CPU: максимум 4 CPU (для 8 подов по 0.5 CPU)
+    requests.cpu: "4"
+    limits.cpu: "8"
+    
+    # Memory: максимум 2 Gi (для 8 подов по 256 Mi)
+    requests.memory: "2Gi"
+    limits.memory: "4Gi"
+    
+    # Количество подов
+    pods: "10"  # С запасом для HPA
+    
+    # Количество сервисов
+    services: "5"
+    
+    # Количество ConfigMaps
+    configmaps: "10"
+    
+    # Количество Secrets
+    secrets: "10"
+    
+    # Количество PersistentVolumeClaims
+    persistentvolumeclaims: "5"
+    
+    # Количество LoadBalancers (если используются)
+    services.loadbalancers: "2"
+    
+    # Количество NodePorts
+    services.nodeports: "5" 

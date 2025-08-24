@@ -1,0 +1,63 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mindbox-app-hpa
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "HPA для автоматического масштабирования Mindbox SRE тестового приложения"
+spec:
+  # Целевой deployment
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mindbox-app
+  
+  # Минимальное и максимальное количество подов
+  minReplicas: 2    # Минимум 2 пода для отказоустойчивости
+  maxReplicas: 8    # Максимум 8 подов для пиковой нагрузки
+  
+  # Метрики для масштабирования
+  metrics:
+  # Масштабирование по CPU
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Масштабировать при 70% CPU
+  
+  # Масштабирование по памяти
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Масштабировать при 80% памяти
+  
+  # Поведение масштабирования
+  behavior:
+    # Масштабирование вверх (при увеличении нагрузки)
+    scaleUp:
+      stabilizationWindowSeconds: 60    # Окно стабилизации 1 минута
+      policies:
+      - type: Percent
+        value: 100                       # Увеличить на 100% (удвоить)
+        periodSeconds: 15                # Каждые 15 секунд
+      - type: Pods
+        value: 2                         # Или добавить 2 пода
+        periodSeconds: 15                # Каждые 15 секунд
+      selectPolicy: Max                  # Выбрать максимальное значение
+    
+    # Масштабирование вниз (при снижении нагрузки)
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Окно стабилизации 5 минут (для дневного цикла)
+      policies:
+      - type: Percent
+        value: 10                        # Уменьшить на 10%
+        periodSeconds: 60                # Каждую минуту
+      - type: Pods
+        value: 1                         # Или убрать 1 под
+        periodSeconds: 60                # Каждую минуту
+      selectPolicy: Min                  # Выбрать минимальное значение 

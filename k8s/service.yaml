@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mindbox-app-service
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Service для доступа к Mindbox SRE тестовому приложению"
+    # Аннотации для мониторинга
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5000"
+spec:
+  # Тип сервиса: ClusterIP для внутреннего доступа
+  type: ClusterIP
+  
+  # Селектор для подов
+  selector:
+    app: mindbox-app
+  
+  # Порт сервиса
+  ports:
+  - name: http
+    port: 80           # Порт сервиса
+    targetPort: 5000   # Порт контейнера
+    protocol: TCP
+  
+  # Внутренний трафик
+  internalTrafficPolicy: Local
+  
+  # Внешний трафик
+  externalTrafficPolicy: Local
+  
+  # Сессионная привязка для стабильности
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 часа
+  
+  # Проверка здоровья
+  healthCheckNodePort: 30000 

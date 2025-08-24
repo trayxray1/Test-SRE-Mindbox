@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mindbox-monitoring-config
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+    component: monitoring
+  annotations:
+    description: "Конфигурация мониторинга для Mindbox SRE тестового приложения"
+data:
+  # Конфигурация Prometheus
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    rule_files:
+      - "mindbox-rules.yml"
+    
+    scrape_configs:
+      - job_name: 'mindbox-app'
+        static_configs:
+          - targets: ['mindbox-app-service.mindbox-sre-test.svc.cluster.local:80']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+  
+  # Правила алертов
+  mindbox-rules.yml: |
+    groups:
+      - name: mindbox-app
+        rules:
+          # Алерт при высокой загрузке CPU
+          - alert: HighCPUUsage
+            expr: container_cpu_usage_seconds_total{container="mindbox-app"} > 0.4
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Высокая загрузка CPU в поде {{ $labels.pod }}"
+              description: "CPU использование превышает 0.4 в поде {{ $labels.pod }}"
+          
+          # Алерт при высокой загрузке памяти
+          - alert: HighMemoryUsage
+            expr: container_memory_usage_bytes{container="mindbox-app"} > 200000000
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Высокая загрузка памяти в поде {{ $labels.pod }}"
+              description: "Использование памяти превышает 200MB в поде {{ $labels.pod }}"
+          
+          # Алерт при недоступности приложения
+          - alert: AppUnavailable
+            expr: up{job="mindbox-app"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Приложение недоступно"
+              description: "Поды приложения недоступны более 1 минуты"
+  
+  # Конфигурация Grafana дашборда
+  grafana-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Mindbox SRE Test App",
+        "panels": [
+          {
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{container=\"mindbox-app\"}[5m])",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{container=\"mindbox-app\"}",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "title": "Request Count",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "mindbox_app_requests_total",
+                "legendFormat": "Total Requests"
+              }
+            ]
+          }
+        ]
+      }
+    } 

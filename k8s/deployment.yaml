@@ -1,0 +1,214 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mindbox-app
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+    version: v1.0.0
+  annotations:
+    description: "Основной deployment для Mindbox SRE тестового приложения"
+spec:
+  # Реплики: минимум 2 для отказоустойчивости, максимум 8 для пиковой нагрузки
+  replicas: 2
+  
+  # Стратегия обновления для минимального downtime
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Максимум 1 дополнительный под во время обновления
+      maxUnavailable: 0  # Не допускать недоступности подов
+  
+  # Селектор для подов
+  selector:
+    matchLabels:
+      app: mindbox-app
+  
+  # Шаблон пода
+  template:
+    metadata:
+      labels:
+        app: mindbox-app
+        version: v1.0.0
+        zone: "auto"  # Автоматическое определение зоны
+      annotations:
+        # Аннотации для мониторинга
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+        
+        # Аннотации для логирования
+        fluentbit.io/parser: "json"
+        
+        # Аннотации для трассировки
+        jaeger.io/sampler.type: "probabilistic"
+        jaeger.io/sampler.param: "0.1"
+    
+    spec:
+      # Service Account для безопасности
+      serviceAccountName: mindbox-app-sa
+      
+      # Приоритет подов для планировщика
+      priorityClassName: "high-priority"
+      
+      # Анти-аффинити для распределения по разным зонам
+      affinity:
+        # Распределение подов по разным зонах для максимальной отказоустойчивости
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - mindbox-app
+              topologyKey: topology.kubernetes.io/zone
+        
+        # Предпочтение размещения на нодах с достаточными ресурсами
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 80
+            preference:
+              matchExpressions:
+              - key: node.kubernetes.io/instance-type
+                operator: In
+                values:
+                - "e2-medium"    # Предпочтительные типы нод
+                - "e2-standard-2"
+                - "n1-standard-2"
+      
+      # Толеранции для размещения на разных типах нод
+      tolerations:
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+      
+      # Перезапуск контейнера при сбое
+      restartPolicy: Always
+      
+      # Таймаут для завершения пода
+      terminationGracePeriodSeconds: 30
+      
+      # Контейнеры
+      containers:
+      - name: mindbox-app
+        image: mindbox-app:latest  # В реальности должен быть полный путь к registry
+        imagePullPolicy: Always
+        
+        # Порт контейнера
+        ports:
+        - name: http
+          containerPort: 5000
+          protocol: TCP
+        
+        # Переменные окружения
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
+        - name: APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: mindbox-app-config
+              key: APP_ENV
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: mindbox-app-config
+              key: LOG_LEVEL
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mindbox-app-secret
+              key: SECRET_KEY
+        
+        # Ресурсы: оптимизированы для дневного цикла нагрузки
+        resources:
+          # Requests: минимальные гарантированные ресурсы
+          requests:
+            cpu: "50m"        # 0.05 CPU для базовой работы
+            memory: "64Mi"    # 64 Mi для базовой работы
+          # Limits: максимальные ресурсы
+          limits:
+            cpu: "500m"       # 0.5 CPU для пиковой нагрузки
+            memory: "256Mi"   # 256 Mi с запасом для мониторинга
+        
+        # Проверки здоровья приложения
+        # Startup probe: учитывает время инициализации 5-10 секунд
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 5000
+          initialDelaySeconds: 5    # Начальная задержка
+          periodSeconds: 5          # Интервал проверки
+          timeoutSeconds: 3         # Таймаут запроса
+          failureThreshold: 20      # Максимум 20 попыток (100 секунд)
+          successThreshold: 1       # 1 успешная проверка для перехода к readiness
+        
+        # Readiness probe: проверка готовности принимать трафик
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          periodSeconds: 10         # Интервал проверки
+          timeoutSeconds: 5         # Таймаут запроса
+          failureThreshold: 3       # 3 неудачные попытки
+          successThreshold: 1       # 1 успешная проверка
+        
+        # Liveness probe: проверка работоспособности
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 5000
+          periodSeconds: 30         # Интервал проверки
+          timeoutSeconds: 10        # Таймаут запроса
+          failureThreshold: 3       # 3 неудачные попытки
+          successThreshold: 1       # 1 успешная проверка
+        
+        # Безопасность
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
+        
+        # Логирование
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+        
+        # Проверка готовности пода
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      
+      # Тома для логирования
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      
+      # DNS политика
+      dnsPolicy: ClusterFirst
+      
+      # Политика перезапуска
+      terminationGracePeriodSeconds: 30 

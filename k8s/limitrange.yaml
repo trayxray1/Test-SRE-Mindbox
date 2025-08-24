@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mindbox-app-limits
+  namespace: mindbox-sre-test
+  labels:
+    app: mindbox-app
+  annotations:
+    description: "Limit Range для установки лимитов по умолчанию"
+spec:
+  # Лимиты для подов
+  limits:
+  - type: Pod
+    min:
+      cpu: "100m"      # Минимум 0.1 CPU на под
+      memory: "64Mi"    # Минимум 64 Mi на под
+    max:
+      cpu: "1"          # Максимум 1 CPU на под
+      memory: "512Mi"   # Максимум 512 Mi на под
+    default:
+      cpu: "200m"       # По умолчанию 0.2 CPU
+      memory: "128Mi"   # По умолчанию 128 Mi
+    defaultRequest:
+      cpu: "100m"       # По умолчанию request 0.1 CPU
+      memory: "64Mi"    # По умолчанию request 64 Mi
+  
+  # Лимиты для контейнеров
+  - type: Container
+    min:
+      cpu: "50m"        # Минимум 0.05 CPU на контейнер
+      memory: "32Mi"    # Минимум 32 Mi на контейнер
+    max:
+      cpu: "500m"       # Максимум 0.5 CPU на контейнер
+      memory: "256Mi"   # Максимум 256 Mi на контейнер
+    default:
+      cpu: "200m"       # По умолчанию 0.2 CPU
+      memory: "128Mi"   # По умолчанию 128 Mi
+    defaultRequest:
+      cpu: "100m"       # По умолчанию request 0.1 CPU
+      memory: "64Mi"    # По умолчанию request 64 Mi
+  
+  # Лимиты для PersistentVolumeClaims
+  - type: PersistentVolumeClaim
+    min:
+      storage: "1Gi"    # Минимум 1 Gi
+    max:
+      storage: "10Gi"   # Максимум 10 Gi 

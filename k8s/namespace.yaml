@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mindbox-sre-test
+  labels:
+    name: mindbox-sre-test
+    purpose: sre-test-assignment 
