@@ -319,7 +319,7 @@ kubectl delete ingress mindbox-app-ingress -n mindbox-sre-test
 
 ---
 
-**Автор**: SRE Engineer  
-**Дата**: $(date)  
+**Автор**: Grishkov Igor with AI  
+**Дата**: 24.08.2025  
 **Версия**: 1.0.0  
 **Лицензия**: MIT 

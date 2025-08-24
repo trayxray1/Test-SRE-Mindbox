@@ -17,12 +17,6 @@ spec:
     max:
       cpu: "1"          # Максимум 1 CPU на под
       memory: "512Mi"   # Максимум 512 Mi на под
-    default:
-      cpu: "200m"       # По умолчанию 0.2 CPU
-      memory: "128Mi"   # По умолчанию 128 Mi
-    defaultRequest:
-      cpu: "100m"       # По умолчанию request 0.1 CPU
-      memory: "64Mi"    # По умолчанию request 64 Mi
   
   # Лимиты для контейнеров
   - type: Container

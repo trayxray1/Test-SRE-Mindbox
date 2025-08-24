@@ -48,8 +48,8 @@ spec:
       # Service Account для безопасности
       serviceAccountName: mindbox-app-sa
       
-      # Приоритет подов для планировщика
-      priorityClassName: "high-priority"
+      # Приоритет подов для планировщика (убрано для локального кластера)
+      # priorityClassName: "high-priority"
       
       # Анти-аффинити для распределения по разным зонам
       affinity:
@@ -94,8 +94,8 @@ spec:
       # Контейнеры
       containers:
       - name: mindbox-app
-        image: mindbox-app:latest  # В реальности должен быть полный путь к registry
-        imagePullPolicy: Always
+        image: mindbox-sre-test:latest  # Локальный образ для тестирования
+        imagePullPolicy: Never  # Использовать локальный образ
         
         # Порт контейнера
         ports:
@@ -141,7 +141,7 @@ spec:
         resources:
           # Requests: минимальные гарантированные ресурсы
           requests:
-            cpu: "50m"        # 0.05 CPU для базовой работы
+            cpu: "100m"       # 0.1 CPU для базовой работы (соответствует LimitRange)
             memory: "64Mi"    # 64 Mi для базовой работы
           # Limits: максимальные ресурсы
           limits:

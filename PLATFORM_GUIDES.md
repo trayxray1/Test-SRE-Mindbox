@@ -584,8 +584,8 @@ kubectl logs <pod-name> -n mindbox-sre-test
 
 ---
 
-**Автор**: SRE Engineer  
-**Дата**: $(date)  
+**Автор**: Grishkov Igor with AI
+**Дата**: 24.08.2025
 **Версия**: 1.0.0  
 **Платформы**: Windows, Linux, macOS, Cloud  
 **Статус**: ✅ Готово к использованию на всех платформах 

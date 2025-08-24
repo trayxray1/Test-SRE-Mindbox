@@ -28,14 +28,8 @@ spec:
   # Внутренний трафик
   internalTrafficPolicy: Local
   
-  # Внешний трафик
-  externalTrafficPolicy: Local
-  
   # Сессионная привязка для стабильности
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
-      timeoutSeconds: 10800  # 3 часа
-  
-  # Проверка здоровья
-  healthCheckNodePort: 30000 
+      timeoutSeconds: 10800  # 3 часа 

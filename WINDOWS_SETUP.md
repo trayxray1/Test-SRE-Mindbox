@@ -552,8 +552,8 @@ Copy-Item "source.txt" "destination.txt"
 
 ---
 
-**Автор**: SRE Engineer  
-**Дата**: $(Get-Date)  
+**Автор**: Grishkov Igor with AI  
+**Дата**: 24.08.2025  
 **Версия**: 1.0.0  
 **Платформа**: Windows  
 **Статус**: ✅ Готово к использованию 
